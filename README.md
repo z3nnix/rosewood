@@ -3,6 +3,13 @@ Rosewood is a wayland Desktop Enviroment.
 It has one palette.
 It makes the color files for many programs from that palette.
 
+## Screenshots
+
+| | | |
+| :-: | :-: | :-: |
+| ![Desktop](meta/screenshots/screenshot0.jpg) | ![Terminal](meta/screenshots/screenshot1.jpg) | ![Apps](meta/screenshots/screenshot2.jpg) |
+| Dark theme | Light theme | Black theme |
+
 ## Requirements
 
 Install these programs:
