@@ -1,0 +1,67 @@
+* {
+    background: #1A1418ff;
+    foreground: #F2D5C4ff;
+    selected: #3A2E35ff;
+    border: #C77D9Aff;
+    font: "Iosevka Term 10";
+}
+
+window {
+    background-color: @background;
+    width: 420px;
+    location: center;
+    border-radius: 0px;
+}
+
+mainbox {
+    background-color: @background;
+    spacing: 6px;
+    padding: 6px;
+}
+
+inputbar {
+    background-color: @background;
+    padding: 8px;
+    spacing: 6px;
+    children: [ prompt, entry ];
+}
+
+prompt {
+    background-color: transparent;
+    text-color: @foreground;
+}
+
+entry {
+    background-color: transparent;
+    text-color: @foreground;
+    placeholder: "run";
+}
+
+listview {
+    background-color: @background;
+    lines: 10;
+    fixed-height: false;
+    spacing: 4px;
+}
+
+element {
+    background-color: @background;
+    padding: 8px 10px;
+    text-color: @foreground;
+}
+
+element selected {
+    background-color: @selected;
+    text-color: @foreground;
+}
+
+element-text {
+    background-color: transparent;
+    text-color: inherit;
+}
+
+element-icon {
+    background-color: transparent;
+    size: 0px;
+}
+

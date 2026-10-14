@@ -1,0 +1,15 @@
+[SddmGreeterTheme]
+Name=rosewood
+Description=Warm plum and rose-gold SDDM theme for Iosevka/Sway setups
+Author=zennix
+Copyright=(c) 2026, zennix
+License=MIT
+Type=sddm-theme
+Version=1.0
+Website=
+MainScript=Main.qml
+ConfigFile=theme.conf
+TranslationsDirectory=translations
+Email=
+Theme-Id=rosewood
+Theme-API=2.0

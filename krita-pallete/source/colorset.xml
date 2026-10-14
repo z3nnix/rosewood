@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Colorset name="Rose Wood" comment="Palette based on rosewood colorscheme" columns="5" rows="1" readonly="false" version="1.0">
+  <ColorSetEntry name="bg" bitdepth="U8" spot="false">
+    <RGB r="0.054901961" g="0.039215688" b="0.050980393"/>
+  </ColorSetEntry>
+  <ColorSetEntry name="bg_soft" bitdepth="U8" spot="false">
+    <RGB r="0.101960784" g="0.078431373" b="0.094117647"/>
+  </ColorSetEntry>
+  <ColorSetEntry name="bg_alt" bitdepth="U8" spot="false">
+    <RGB r="0.164705882" g="0.125490196" b="0.156862745"/>
+  </ColorSetEntry>
+  <ColorSetEntry name="bg_sel" bitdepth="U8" spot="false">
+    <RGB r="0.227450980" g="0.180392157" b="0.207843137"/>
+  </ColorSetEntry>
+  <ColorSetEntry name="fg" bitdepth="U8" spot="false">
+    <RGB r="0.949019608" g="0.835294118" b="0.768627451"/>
+  </ColorSetEntry>
+  <ColorSetEntry name="muted" bitdepth="U8" spot="false">
+    <RGB r="0.360784314" g="0.290196078" b="0.321568627"/>
+  </ColorSetEntry>
+  <ColorSetEntry name="rose" bitdepth="U8" spot="false">
+    <RGB r="0.780392157" g="0.490196078" b="0.603921569"/>
+  </ColorSetEntry>
+  <ColorSetEntry name="steel" bitdepth="U8" spot="false">
+    <RGB r="0.415686275" g="0.541176471" b="0.603921569"/>
+  </ColorSetEntry>
+  <ColorSetEntry name="red" bitdepth="U8" spot="false">
+    <RGB r="0.850980392" g="0.325490196" b="0.309803922"/>
+  </ColorSetEntry>
+</Colorset>
