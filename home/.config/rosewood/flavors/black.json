@@ -1,0 +1,19 @@
+{
+  "flavor": "black",
+  "adaptive_neutrals": false,
+  "ui": {
+    "bg": "#0E0A0D",
+    "bg_soft": "#0A090B",
+    "bg_alt": "#141215",
+    "bg_sel": "#1F1B20",
+    "fg": "#F2D5C4",
+    "muted": "#5C4A52",
+    "rose": "#C77D9A",
+    "steel": "#6A8A9A",
+    "red": "#D9534F"
+  },
+  "term": {
+    "background": "0a090b",
+    "foreground": "f2c9a8"
+  }
+}

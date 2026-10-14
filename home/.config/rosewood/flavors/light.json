@@ -1,0 +1,35 @@
+{
+  "flavor": "light",
+  "adaptive_neutrals": true,
+  "ui": {
+    "bg": "#F4E9E2",
+    "bg_soft": "#EAD9CF",
+    "bg_alt": "#DCC6BA",
+    "bg_sel": "#C9AC9E",
+    "fg": "#2A1C22",
+    "muted": "#8A6B74",
+    "rose": "#A0506E",
+    "steel": "#46657A",
+    "red": "#B23A36"
+  },
+  "term": {
+    "background": "f4e9e2",
+    "foreground": "2a1c22",
+    "regular0": "3a2a2e",
+    "regular1": "a03a32",
+    "regular2": "6e5a32",
+    "regular3": "9a6a2e",
+    "regular4": "7a5a50",
+    "regular5": "8a4a56",
+    "regular6": "4a6a6a",
+    "regular7": "5a4448",
+    "bright0": "6a545a",
+    "bright1": "c05a50",
+    "bright2": "8a7a4a",
+    "bright3": "b88a4a",
+    "bright4": "9a7a6e",
+    "bright5": "aa6a76",
+    "bright6": "6a8a8a",
+    "bright7": "2a1c22"
+  }
+}

@@ -1,0 +1,14 @@
+# Rosewood color extraction config.
+# Used only to read the wallpaper color scheme as JSON for adaptive mode.
+# It renders no templates and does not set the wallpaper.
+
+[config]
+fallback_color = "#C77D9A"
+prefer = "closest-to-fallback"
+
+[config.wallpaper]
+set = false
+command = "true"
+
+# No templates: this config only reads the wallpaper color scheme.
+[templates]

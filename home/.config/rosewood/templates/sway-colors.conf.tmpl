@@ -1,0 +1,32 @@
+# Rosewood generated file. Do not edit.
+# Wallpaper, bar, and client colors for the sway session.
+
+output * bg '{{rw.wallpaper}}' fill
+
+# Background color for swaylock, without the leading '#'.
+set $lockbg {{rw.ui.bg_soft | replace: "#", ""}}
+
+bar {
+    position top
+    font pango:Iosevka Term 10
+    status_command $HOME/.config/sway/status.sh
+    separator_symbol "  |  "
+    status_padding 6
+
+    colors {
+        background {{rw.ui.bg_soft}}
+        statusline {{rw.ui.fg}}
+        separator  {{rw.ui.muted}}
+        inactive_workspace {{rw.ui.bg_soft}}00 {{rw.ui.bg_soft}}00 {{rw.ui.muted}}
+        active_workspace   {{rw.ui.bg_sel}} {{rw.ui.bg_sel}} {{rw.ui.fg}}
+        focused_workspace  {{rw.ui.bg_sel}} {{rw.ui.bg_sel}} {{rw.ui.fg}}
+        urgent_workspace   {{rw.ui.red}} {{rw.ui.bg_soft}} {{rw.ui.fg}}
+        binding_mode       {{rw.ui.red}} {{rw.ui.bg_soft}} {{rw.ui.fg}}
+    }
+}
+
+client.focused          {{rw.ui.rose}} {{rw.ui.bg_soft}} {{rw.ui.fg}} {{rw.ui.rose}} {{rw.ui.rose}}
+client.focused_inactive {{rw.ui.steel}} {{rw.ui.bg_soft}} {{rw.ui.fg}} {{rw.ui.steel}} {{rw.ui.steel}}
+client.unfocused        {{rw.ui.bg_sel}} {{rw.ui.bg_soft}} {{rw.ui.muted}} {{rw.ui.bg_sel}} {{rw.ui.bg_sel}}
+client.urgent           {{rw.ui.red}} {{rw.ui.bg_soft}} {{rw.ui.fg}} {{rw.ui.red}} {{rw.ui.red}}
+client.placeholder      {{rw.ui.bg_soft}} {{rw.ui.bg_soft}} {{rw.ui.fg}} {{rw.ui.bg_soft}} {{rw.ui.bg_soft}}

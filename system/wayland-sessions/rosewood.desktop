@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Rosewood
+Comment=Rosewood (sway)
+Exec=sway
+TryExec=sway
+Type=Application
+DesktopNames=Rosewood

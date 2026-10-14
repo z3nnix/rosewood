@@ -1,0 +1,37 @@
+{
+  "flavor": "dark",
+  "mode": "strict",
+  "wallpaper": "",
+  "adaptive_neutrals": true,
+  "ui": {
+    "bg": "#0E0A0D",
+    "bg_soft": "#1A1418",
+    "bg_alt": "#2A2028",
+    "bg_sel": "#3A2E35",
+    "fg": "#F2D5C4",
+    "muted": "#5C4A52",
+    "rose": "#C77D9A",
+    "steel": "#6A8A9A",
+    "red": "#D9534F"
+  },
+  "term": {
+    "background": "1f1122",
+    "foreground": "f2c9a8",
+    "regular0": "2b1d1d",
+    "regular1": "c96b5e",
+    "regular2": "8c6b4a",
+    "regular3": "e8b87a",
+    "regular4": "d4b8a8",
+    "regular5": "c98a8a",
+    "regular6": "a88a7a",
+    "regular7": "e8d8c8",
+    "bright0": "4a3535",
+    "bright1": "e88a7a",
+    "bright2": "a88a6a",
+    "bright3": "f2d8a8",
+    "bright4": "f2e8d8",
+    "bright5": "e8b8b8",
+    "bright6": "c8b8a8",
+    "bright7": "ffffff"
+  }
+}

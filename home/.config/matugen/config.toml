@@ -1,0 +1,36 @@
+# Rosewood matugen template routing.
+# The rosewood CLI calls matugen with --import-json <state>/render.json.
+# All colors come from that file. matugen renders the templates and sets
+# the wallpaper. See rosewood help.
+
+[config]
+fallback_color = "#C77D9A"
+prefer = "closest-to-fallback"
+
+[config.wallpaper]
+set = true
+command = "swaymsg output '*' bg '{{ image }}' fill >/dev/null 2>&1 || true"
+
+[templates.foot]
+input_path = "~/.config/rosewood/templates/foot.ini.tmpl"
+output_path = "~/.config/foot/foot.ini"
+
+[templates.rofi]
+input_path = "~/.config/rosewood/templates/rofi.rasi.tmpl"
+output_path = "~/.config/rofi/themes/rosewood.rasi"
+
+[templates.mako]
+input_path = "~/.config/rosewood/templates/mako.tmpl"
+output_path = "~/.config/mako/config"
+
+[templates.sway]
+input_path = "~/.config/rosewood/templates/sway-colors.conf.tmpl"
+output_path = "~/.config/rosewood/generated/sway-colors.conf"
+
+[templates.nvim]
+input_path = "~/.config/rosewood/templates/nvim-palette.lua.tmpl"
+output_path = "~/.config/rosewood/generated/nvim-palette.lua"
+
+[templates.sddm]
+input_path = "~/.config/rosewood/templates/sddm-theme.conf.tmpl"
+output_path = "~/.local/share/sddm/themes/rosewood/theme.conf"

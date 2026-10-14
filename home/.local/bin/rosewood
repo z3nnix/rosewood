@@ -1,0 +1,398 @@
+#!/bin/sh
+
+set -eu
+
+PROG=rosewood
+
+die()  { printf '%s: %s\n' "$PROG" "$*" >&2; exit 1; }
+warn() { printf '%s: %s\n' "$PROG" "$*" >&2; }
+have() { command -v "$1" >/dev/null 2>&1; }
+
+# real = <repo>/home/.local/bin/rosewood
+self=$0
+case $self in
+    */*) ;;
+    *) self=$(command -v -- "$self" 2>/dev/null || printf '%s' "$self") ;;
+esac
+real=$(readlink -f -- "$self" 2>/dev/null || printf '%s' "$self")
+repo=$(cd -- "$(dirname -- "$real")/../../.." && pwd)
+
+conf_home=${XDG_CONFIG_HOME:-$HOME/.config}
+state_home=${XDG_STATE_HOME:-$HOME/.local/state}
+
+rose_conf=$conf_home/rosewood
+matugen_conf=$conf_home/matugen
+gen_dir=$rose_conf/generated
+state_dir=$state_home/rosewood
+state_file=$state_dir/state
+render_json=$state_dir/render.json
+scheme_json=$state_dir/scheme.json
+wall_dir=$repo/wallpapers
+main_cfg=$matugen_conf/config.toml
+extract_cfg=$matugen_conf/extract.toml
+
+fallback_color="#C77D9A"
+
+state_get() {
+    [ -f "$state_file" ] || return 0
+    sed -n "s/^$1=//p" "$state_file" | tail -n 1
+}
+
+state_set() {
+    key=$1
+    val=$2
+    mkdir -p "$state_dir"
+    if [ -f "$state_file" ]; then
+        grep -v "^$key=" "$state_file" > "$state_file.tmp" || true
+    else
+        : > "$state_file.tmp"
+    fi
+    printf '%s=%s\n' "$key" "$val" >> "$state_file.tmp"
+    mv "$state_file.tmp" "$state_file"
+}
+
+valid_flavor() { case $1 in dark | light | black) return 0 ;; *) return 1 ;; esac; }
+valid_mode()   { case $1 in strict | adaptive) return 0 ;; *) return 1 ;; esac; }
+
+resolve_wp() {
+    arg=$1
+    if [ -f "$arg" ]; then
+        readlink -f -- "$arg"
+        return 0
+    fi
+    for ext in "" .jpg .jpeg .png .webp; do
+        if [ -f "$wall_dir/$arg$ext" ]; then
+            readlink -f -- "$wall_dir/$arg$ext"
+            return 0
+        fi
+    done
+    die "wallpaper not found: $arg"
+}
+
+flavor_for_wp() {
+    base=$(basename -- "$1")
+    [ -f "$rose_conf/wallpapers.tsv" ] || return 0
+    awk -F'\t' -v b="$base" '!/^#/ && $1 == b { print $2; exit }' "$rose_conf/wallpapers.tsv"
+}
+
+build_render() {
+    flavor=$1
+    mode=$2
+    wp=$3
+    mkdir -p "$state_dir"
+
+    work=$state_dir/work.json
+
+    jq -s '.[0] * .[1]' \
+        "$rose_conf/identity.json" \
+        "$rose_conf/flavors/$flavor.json" > "$state_dir/base.json"
+
+    jq --arg f "$flavor" --arg m "$mode" --arg w "$wp" \
+        '.flavor = $f | .mode = $m | .wallpaper = $w' \
+        "$state_dir/base.json" > "$work"
+
+    if [ "$mode" = adaptive ] && [ "$(jq -r '.adaptive_neutrals' "$work")" = true ]; then
+        case $flavor in
+            light) mmode=light ;;
+            *)     mmode=dark ;;
+        esac
+
+        if matugen image "$wp" -c "$extract_cfg" -j hex -m "$mmode" \
+                --prefer closest-to-fallback --fallback-color "$fallback_color" \
+                > "$scheme_json" 2>/dev/null; then
+            bg=$(jq -r --arg m "$mmode" '.colors.surface[$m].color // empty' "$scheme_json")
+            bg_soft=$(jq -r --arg m "$mmode" '.colors.surface_container_low[$m].color // empty' "$scheme_json")
+            bg_alt=$(jq -r --arg m "$mmode" '.colors.surface_container[$m].color // empty' "$scheme_json")
+            bg_sel=$(jq -r --arg m "$mmode" '.colors.surface_container_high[$m].color // empty' "$scheme_json")
+
+            bg_soft=${bg_soft:-$bg}
+            bg_alt=${bg_alt:-$bg}
+            bg_sel=${bg_sel:-$bg}
+
+            if [ -n "$bg" ]; then
+                term_bg=${bg#\#}
+                jq --arg bg "$bg" --arg s "$bg_soft" --arg a "$bg_alt" --arg sel "$bg_sel" --arg tb "$term_bg" \
+                    '.ui.bg = $bg | .ui.bg_soft = $s | .ui.bg_alt = $a | .ui.bg_sel = $sel | .term.background = $tb' \
+                    "$work" > "$work.tmp" && mv "$work.tmp" "$work"
+            else
+                warn "adaptive: empty scheme; keeping locked neutrals"
+            fi
+        else
+            warn "adaptive: cannot read wallpaper colors; keeping locked neutrals"
+        fi
+    fi
+
+    # Wrap under "rw" so templates use {{rw.<key>}}.
+    jq '{ rw: . }' "$work" > "$render_json"
+}
+
+render_templates() {
+    flavor=$1
+    wp=$2
+    case $flavor in
+        light) mmode=light ;;
+        *)     mmode=dark ;;
+    esac
+
+    mkdir -p \
+        "$conf_home/foot" \
+        "$conf_home/rofi/themes" \
+        "$conf_home/mako" \
+        "$gen_dir" \
+        "$HOME/.local/share/sddm/themes/rosewood" \
+        "$HOME/.local/share/krita/palettes"
+
+    matugen image "$wp" -c "$main_cfg" -m "$mmode" \
+        --prefer closest-to-fallback --fallback-color "$fallback_color" \
+        --import-json "$render_json"
+}
+
+# Krita reads GIMP palettes (.gpl). This format is not a matugen template,
+# so the CLI renders it from the same render.json. No extra dependencies.
+render_krita_gpl() {
+    out=$HOME/.local/share/krita/palettes/RoseWood.gpl
+    mkdir -p "$(dirname -- "$out")"
+    printf 'GIMP Palette\nName: RoseWood\nColumns: 5\n#\n' > "$out"
+    {
+        jq -r '.rw.ui | to_entries[] | "\(.value) \(.key)"' "$render_json"
+        jq -r '.rw.term | to_entries[] | "\(.value) \(.key)"' "$render_json"
+    } | awk '
+        BEGIN { h = "0123456789abcdef" }
+        function d(c) { return index(h, tolower(c)) - 1 }
+        {
+            hex = $1
+            sub(/^#/, "", hex)
+            if (length(hex) != 6) next
+            r = d(substr(hex, 1, 1)) * 16 + d(substr(hex, 2, 1))
+            g = d(substr(hex, 3, 1)) * 16 + d(substr(hex, 4, 1))
+            b = d(substr(hex, 5, 1)) * 16 + d(substr(hex, 6, 1))
+            name = $2
+            printf "%3d %3d %3d\t%s\n", r, g, b, name
+        }
+    ' >> "$out"
+}
+
+reload_all() {
+    if have swaymsg; then
+        swaymsg reload >/dev/null 2>&1 || warn "sway reload failed"
+    fi
+    if have makoctl; then
+        makoctl reload >/dev/null 2>&1 || true
+    fi
+}
+
+apply_internal() {
+    wp=$1
+    flavor=$2
+    mode=$3
+    do_reload=$4
+
+    have matugen || die "matugen is required"
+    have jq || die "jq is required"
+
+    build_render "$flavor" "$mode" "$wp"
+    render_templates "$flavor" "$wp"
+    render_krita_gpl
+
+    state_set flavor "$flavor"
+    state_set mode "$mode"
+    state_set wallpaper "$wp"
+
+    if [ "$do_reload" = 1 ]; then
+        reload_all
+    fi
+
+    printf '%s: applied flavor=%s mode=%s\n%s\n' "$PROG" "$flavor" "$mode" "$wp"
+    printf '%s: new foot, rofi and mako windows use the new colors\n' "$PROG"
+}
+
+# commands
+
+# Install the Rosewood session entry so the display manager can set
+# XDG_CURRENT_DESKTOP=Rosewood. This needs root.
+install_session() {
+    src=$repo/system/wayland-sessions/rosewood.desktop
+    dst=/usr/local/share/wayland-sessions/rosewood.desktop
+
+    if [ ! -f "$src" ]; then
+        warn "session file not found: $src"
+        return 0
+    fi
+
+    if [ "$(id -u)" -eq 0 ]; then
+        install -Dm644 "$src" "$dst" || { warn "could not write $dst"; return 0; }
+    elif have sudo; then
+        printf '%s: installing session file (root password may be asked)\n' "$PROG"
+        sudo install -Dm644 "$src" "$dst" || { warn "could not write $dst"; return 0; }
+    else
+        warn "cannot write $dst without root. Run this command:"
+        warn "  sudo install -Dm644 '$src' '$dst'"
+        return 0
+    fi
+
+    printf '%s: session "Rosewood" installed at %s\n' "$PROG" "$dst"
+    printf '%s: log out and select the Rosewood session in your display manager\n' "$PROG"
+}
+
+cmd_install() {
+    missing=""
+    for c in matugen jq stow; do
+        have "$c" || missing="$missing $c"
+    done
+    [ -z "$missing" ] || die "missing required command(s):$missing"
+
+    for c in sway swaymsg foot rofi nvim mako; do
+        have "$c" || warn "optional command not found: $c"
+    done
+
+    mkdir -p "$state_dir"
+    stow --dir "$repo" --target "$HOME" --no-folding --restow home
+    printf '%s: dotfiles linked into %s\n' "$PROG" "$HOME"
+
+    install_session
+
+    printf '%s: choose a mode next:  %s mode strict   (or adaptive)\n' "$PROG" "$PROG"
+}
+
+cmd_mode() {
+    if [ $# -eq 0 ]; then
+        state_get mode
+        return 0
+    fi
+    m=$1
+    valid_mode "$m" || die "unknown mode: $m (use strict or adaptive)"
+
+    wp=$(state_get wallpaper)
+    flavor=$(state_get flavor)
+    if [ -n "$wp" ] && [ -n "$flavor" ]; then
+        apply_internal "$wp" "$flavor" "$m" 1
+    else
+        state_set mode "$m"
+        printf '%s: mode set to %s\n' "$PROG" "$m"
+    fi
+}
+
+cmd_flavor() {
+    if [ $# -eq 0 ]; then
+        state_get flavor
+        return 0
+    fi
+    f=$1
+    valid_flavor "$f" || die "unknown flavor: $f (use dark, light or black)"
+
+    wp=$(state_get wallpaper)
+    mode=$(state_get mode)
+    if [ -n "$wp" ] && [ -n "$mode" ]; then
+        apply_internal "$wp" "$f" "$mode" 1
+    else
+        state_set flavor "$f"
+        printf '%s: flavor set to %s (apply a wallpaper to render)\n' "$PROG" "$f"
+    fi
+}
+
+cmd_apply() {
+    wp=""
+    flavor=""
+    mode=""
+    do_reload=1
+
+    while [ $# -gt 0 ]; do
+        case $1 in
+            --flavor)
+                [ $# -ge 2 ] || die "--flavor needs a value"
+                flavor=$2
+                shift 2
+                ;;
+            --flavor=*) flavor=${1#*=}; shift ;;
+            --mode)
+                [ $# -ge 2 ] || die "--mode needs a value"
+                mode=$2
+                shift 2
+                ;;
+            --mode=*) mode=${1#*=}; shift ;;
+            --no-reload) do_reload=0; shift ;;
+            -h | --help) usage; return 0 ;;
+            -*) die "unknown option: $1" ;;
+            *)
+                [ -z "$wp" ] || die "unexpected argument: $1"
+                wp=$1
+                shift
+                ;;
+        esac
+    done
+
+    [ -n "$wp" ] || die "usage: $PROG apply <wallpaper> [--flavor dark|light|black] [--mode strict|adaptive]"
+    wp=$(resolve_wp "$wp")
+
+    [ -n "$flavor" ] || flavor=$(flavor_for_wp "$wp")
+    [ -n "$flavor" ] || flavor=$(state_get flavor)
+    [ -n "$flavor" ] || die "cannot infer flavor; pass --flavor dark|light|black"
+    valid_flavor "$flavor" || die "unknown flavor: $flavor"
+
+    [ -n "$mode" ] || mode=$(state_get mode)
+    [ -n "$mode" ] || die "no mode set; run '$PROG mode strict' or '$PROG mode adaptive' (or pass --mode)"
+    valid_mode "$mode" || die "unknown mode: $mode"
+
+    apply_internal "$wp" "$flavor" "$mode" "$do_reload"
+}
+
+cmd_reload() {
+    reload_all
+    printf '%s: reload signal sent\n' "$PROG"
+}
+
+cmd_status() {
+    printf 'flavor:    %s\n' "$(state_get flavor)"
+    printf 'mode:      %s\n' "$(state_get mode)"
+    printf 'wallpaper: %s\n' "$(state_get wallpaper)"
+}
+
+cmd_list() {
+    printf 'wallpapers in %s\n' "$wall_dir"
+    for f in "$wall_dir"/*; do
+        [ -f "$f" ] || continue
+        base=$(basename -- "$f")
+        case $base in
+            *.jpg | *.jpeg | *.png | *.webp) ;;
+            *) continue ;;
+        esac
+        printf '  %-16s %s\n' "$base" "$(flavor_for_wp "$base")"
+    done
+}
+
+usage() {
+    cat <<EOF
+$PROG Rosewood manager
+
+Usage:
+  $PROG install
+  $PROG mode [strict|adaptive]
+  $PROG flavor [dark|light|black]
+  $PROG apply <wallpaper> [--flavor F] [--mode M] [--no-reload]
+  $PROG reload
+  $PROG status
+  $PROG list
+
+Modes:
+  strict     use the locked Rosewood colors
+  adaptive   take background tones from the wallpaper
+
+Flavors:
+  dark, light, black
+EOF
+}
+
+[ $# -gt 0 ] || { usage; exit 2; }
+cmd=$1
+shift
+case $cmd in
+    install) cmd_install "$@" ;;
+    mode) cmd_mode "$@" ;;
+    flavor) cmd_flavor "$@" ;;
+    apply) cmd_apply "$@" ;;
+    reload) cmd_reload "$@" ;;
+    status) cmd_status "$@" ;;
+    list) cmd_list "$@" ;;
+    help | -h | --help) usage ;;
+    *) die "unknown command: $cmd" ;;
+esac

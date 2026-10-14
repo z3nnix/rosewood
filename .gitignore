@@ -1,0 +1,6 @@
+home/.config/rosewood/generated/
+
+# Editor and shell leftovers.
+*~
+*.tmp
+*.bak

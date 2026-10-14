@@ -1,0 +1,67 @@
+/* Rosewood generated file. Do not edit. */
+* {
+    background: {{rw.ui.bg_soft}}ff;
+    foreground: {{rw.ui.fg}}ff;
+    selected:   {{rw.ui.bg_sel}}ff;
+    border:     {{rw.ui.rose}}ff;
+    font: "Iosevka Term 10";
+}
+
+window {
+    background-color: @background;
+    width: 420px;
+    location: center;
+    border-radius: 0px;
+}
+
+mainbox {
+    background-color: @background;
+    spacing: 6px;
+    padding: 6px;
+}
+
+inputbar {
+    background-color: @background;
+    padding: 8px;
+    spacing: 6px;
+    children: [ prompt, entry ];
+}
+
+prompt {
+    background-color: transparent;
+    text-color: @foreground;
+}
+
+entry {
+    background-color: transparent;
+    text-color: @foreground;
+    placeholder: "run";
+}
+
+listview {
+    background-color: @background;
+    lines: 10;
+    fixed-height: false;
+    spacing: 4px;
+}
+
+element {
+    background-color: @background;
+    padding: 8px 10px;
+    text-color: @foreground;
+}
+
+element selected {
+    background-color: @selected;
+    text-color: @foreground;
+}
+
+element-text {
+    background-color: transparent;
+    text-color: inherit;
+}
+
+element-icon {
+    background-color: transparent;
+    size: 0px;
+}
