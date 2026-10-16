@@ -34,3 +34,15 @@ output_path = "~/.config/rosewood/generated/nvim-palette.lua"
 [templates.sddm]
 input_path = "~/.config/rosewood/templates/sddm-theme.conf.tmpl"
 output_path = "~/.local/share/sddm/themes/rosewood/theme.conf"
+
+[templates.vscode-dark]
+input_path = "~/.config/rosewood/templates/vscode-dark.json.tmpl"
+output_path = "~/.config/rosewood/generated/vscode/rosewood-dark.json"
+
+[templates.vscode-light]
+input_path = "~/.config/rosewood/templates/vscode-light.json.tmpl"
+output_path = "~/.config/rosewood/generated/vscode/rosewood-light.json"
+
+[templates.vscode-black]
+input_path = "~/.config/rosewood/templates/vscode-black.json.tmpl"
+output_path = "~/.config/rosewood/generated/vscode/rosewood-black.json"

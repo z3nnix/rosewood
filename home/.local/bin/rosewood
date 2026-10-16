@@ -75,6 +75,60 @@ flavor_for_wp() {
     awk -F'\t' -v b="$base" '!/^#/ && $1 == b { print $2; exit }' "$rose_conf/wallpapers.tsv"
 }
 
+mix_hex() {
+    awk -v a="$1" -v b="$2" -v t="$3" '
+        function d(c) { return index(h, tolower(c)) - 1 }
+        function byte(x, p,   hi, lo) {
+            hi = d(substr(x, p, 1))
+            lo = d(substr(x, p + 1, 1))
+            return hi * 16 + lo
+        }
+        BEGIN {
+            h = "0123456789abcdef"
+            fa = t / 100
+            sub(/^#/, "", a)
+            sub(/^#/, "", b)
+            r = byte(a, 1) + (byte(b, 1) - byte(a, 1)) * fa
+            g = byte(a, 3) + (byte(b, 3) - byte(a, 3)) * fa
+            bl = byte(a, 5) + (byte(b, 5) - byte(a, 5)) * fa
+            printf "#%02x%02x%02x\n", r, g, bl
+        }
+    '
+}
+
+derive_editor_colors() {
+    for f in dark light black; do
+        fg=$(jq -r ".rw.flavors.$f.ui.fg" "$render_json")
+        muted=$(jq -r ".rw.flavors.$f.ui.muted" "$render_json")
+        rose=$(jq -r ".rw.flavors.$f.ui.rose" "$render_json")
+        steel=$(jq -r ".rw.flavors.$f.ui.steel" "$render_json")
+        red=$(jq -r ".rw.flavors.$f.ui.red" "$render_json")
+        gold="#$(jq -r ".rw.flavors.$f.term.regular3" "$render_json")"
+        salmon="#$(jq -r ".rw.flavors.$f.term.bright1" "$render_json")"
+
+        fg_dim=$(mix_hex "$fg" "$muted" 45)
+        comment=$(mix_hex "$muted" "$fg" 30)
+        rose_bright=$(mix_hex "$rose" "$fg" 30)
+        steel_bright=$(mix_hex "$steel" "$fg" 35)
+        gold=$(mix_hex "$gold" "$fg" 20)
+        salmon=$(mix_hex "$salmon" "$fg" 20)
+
+        jq --arg f "$f" \
+            --arg fg "$fg" --arg fg_dim "$fg_dim" --arg comment "$comment" \
+            --arg muted "$muted" --arg rose "$rose" --arg rose_bright "$rose_bright" \
+            --arg steel "$steel" --arg steel_bright "$steel_bright" \
+            --arg gold "$gold" --arg salmon "$salmon" --arg red "$red" \
+            '
+            .rw.flavors[$f].editor = {
+                fg: $fg, fg_dim: $fg_dim, comment: $comment, muted: $muted,
+                rose: $rose, rose_bright: $rose_bright,
+                steel: $steel, steel_bright: $steel_bright,
+                gold: $gold, salmon: $salmon, red: $red
+            }
+            ' "$render_json" > "$render_json.tmp" && mv "$render_json.tmp" "$render_json"
+    done
+}
+
 build_render() {
     flavor=$1
     mode=$2
@@ -122,8 +176,30 @@ build_render() {
         fi
     fi
 
-    # Wrap under "rw" so templates use {{rw.<key>}}.
-    jq '{ rw: . }' "$work" > "$render_json"
+    jq -n \
+        --slurpfile id "$rose_conf/identity.json" \
+        --slurpfile cur "$work" \
+        --slurpfile d "$rose_conf/flavors/dark.json" \
+        --slurpfile l "$rose_conf/flavors/light.json" \
+        --slurpfile b "$rose_conf/flavors/black.json" \
+        --arg cf "$flavor" \
+        '
+        ($id[0]) as $base |
+        {
+            rw: ($cur[0] + {
+                flavors: (
+                    {
+                        dark:  ($base * $d[0] + { flavor: "dark" }),
+                        light: ($base * $l[0] + { flavor: "light" }),
+                        black: ($base * $b[0] + { flavor: "black" })
+                    }
+                    | .[$cf] = $cur[0]
+                )
+            })
+        }
+        ' > "$render_json"
+
+    derive_editor_colors
 }
 
 render_templates() {
@@ -139,6 +215,7 @@ render_templates() {
         "$conf_home/rofi/themes" \
         "$conf_home/mako" \
         "$gen_dir" \
+        "$gen_dir/vscode" \
         "$HOME/.local/share/sddm/themes/rosewood" \
         "$HOME/.local/share/krita/palettes"
 
@@ -172,6 +249,47 @@ render_krita_gpl() {
     ' >> "$out"
 }
 
+editor_roots() {
+    for root in \
+        "$HOME/.vscode/extensions" \
+        "$HOME/.vscode-oss/extensions" \
+        "$HOME/.vscode-insiders/extensions" \
+        "$HOME/.cursor/extensions" \
+        "$HOME/.windsurf/extensions"
+    do
+        [ -d "$(dirname -- "$root")" ] && printf '%s\n' "$root"
+    done
+}
+
+install_editors() {
+    src=$repo/editors/vscode
+    [ -d "$src" ] || return 0
+
+    themes=$gen_dir/vscode
+    mkdir -p "$themes"
+
+    if [ -e "$src/themes" ] && [ ! -L "$src/themes" ]; then
+        warn "$src/themes exists and is not a symlink; leaving it alone"
+    elif [ "$(readlink -- "$src/themes" 2>/dev/null)" != "$themes" ]; then
+        ln -sfn "$themes" "$src/themes"
+    fi
+
+    found=0
+    for root in $(editor_roots); do
+        found=1
+        mkdir -p "$root"
+        dst=$root/rosewood
+        if [ -e "$dst" ] && [ ! -L "$dst" ]; then
+            warn "$dst exists and is not a symlink; skipping"
+        elif [ "$(readlink -- "$dst" 2>/dev/null)" != "$src" ]; then
+            ln -sfn "$src" "$dst"
+            printf '%s: linked editor extension at %s\n' "$PROG" "$dst"
+        fi
+    done
+
+    [ "$found" = 1 ] || warn "no VS Code-family editor found; skipping editors"
+}
+
 reload_all() {
     if have swaymsg; then
         swaymsg reload >/dev/null 2>&1 || warn "sway reload failed"
@@ -193,6 +311,7 @@ apply_internal() {
     build_render "$flavor" "$mode" "$wp"
     render_templates "$flavor" "$wp"
     render_krita_gpl
+    install_editors
 
     state_set flavor "$flavor"
     state_set mode "$mode"
@@ -249,6 +368,7 @@ cmd_install() {
     stow --dir "$repo" --target "$HOME" --no-folding --restow home
     printf '%s: dotfiles linked into %s\n' "$PROG" "$HOME"
 
+    install_editors
     install_session
 
     printf '%s: choose a mode next:  %s mode strict   (or adaptive)\n' "$PROG" "$PROG"

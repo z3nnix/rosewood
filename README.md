@@ -95,13 +95,13 @@ These programs are optional:
 | 14 br cyan | `#C8B8A8` |
 | 15 br white | `#FFFFFF` |
 
-> ANSI hints:
-> red: errors
-> green: success
-> yellow: warnings
-> blue: paths and structure
-> magenta: constants
-> cyan: keys and metadata
+> ### ANSI hints: <br>
+> - red: errors <br>
+> - green: success <br>
+> - yellow: warnings <br>
+> - blue: paths and structure <br>
+> - magenta: constants <br>
+> - cyan: keys and metadata <br>
 
 ## License
 
