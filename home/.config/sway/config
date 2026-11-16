@@ -121,7 +121,6 @@ bindsym --to-code $mod+r mode "resize"
 
 ### Utilities
     bindsym --to-code $mod+Shift+v exec clipman pick -t rofi -T "-theme $themefile"
-    bindsym $mod+Escape exec swaylock -f -c $lockbg
     bindsym --to-code $mod+Shift+p exec ~/.config/sway/power.sh
     bindsym --to-code $mod+Shift+n exec pkill wlsunset || wlsunset -T 4000 -t 4000
 
@@ -172,7 +171,7 @@ exec --no-startup-id wob
 exec --no-startup-id wl-paste -t text --watch clipman store --max-items 500
 exec --no-startup-id /usr/libexec/polkit-kde-authentication-agent-1
 exec --no-startup-id ~/.config/sway/float-jitter.sh
-exec --no-startup-id swayidle -w timeout 300 'swaylock -f -c $lockbg' timeout 600 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' before-sleep 'swaylock -f -c $lockbg'
+exec --no-startup-id swayidle -w timeout 600 'swaymsg "output * power off"' resume 'swaymsg "output * power on"'
 
 include /etc/sway/config.d/*
 

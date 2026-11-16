@@ -23,7 +23,7 @@ These programs are optional:
 - `rofi`: the application menu
 - `mako`: the notification program
 - `nvim`: the text editor
-- `clipman`, `swaylock`, and `swayidle`: small desktop tools
+- `clipman` and `swayidle`: small desktop tools
 - `sddm`: the login screen
 
 ## Installation
